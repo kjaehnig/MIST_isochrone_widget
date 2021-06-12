@@ -37,6 +37,11 @@ The .isochrones directory will look like this once unzipped:
 
 
 ## Using the isochrone widget for the first time
+**DON'T FORGET TO SET THE BASE DIRECTORY FOR THE WIDGET**
+This can be done by changing the following line in run_isochrone_widget.py (line #16):
+    RepoDIR = "YOUR_REPOSITORY_DIRECTORY/MIST-isochrone-widget/"
+To the directory into which you download this REPO.
+
 
 The widget can be called from a terminal by typing: 
         " python run_isochrone_widget.py "
