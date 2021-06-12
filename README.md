@@ -38,7 +38,7 @@ The .isochrones directory will look like this once unzipped:
 
 ## Using the isochrone widget for the first time
 
-The widget can be called from a terminal by doing: 
+The widget can be called from a terminal by typing: 
         " python run_isochrone_widget.py "
         
 After which the following should appear in your terminal:
