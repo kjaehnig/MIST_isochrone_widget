@@ -19,6 +19,27 @@ If you wish to avoid this interpolation step and want to jump right into creatin
     " tar -xvzf isochrones_precompiled_data.tar.gz " 
     
 The compressed directory can be downloaded from this [One-drive-link](https://tinyurl.com/mby99638)
+The .isochrones directory will look like this once unzipped:
+```bash
+├── app
+│   ├── css
+│   │   ├── **/*.css
+│   ├── favicon.ico
+│   ├── images
+│   ├── index.html
+│   ├── js
+│   │   ├── **/*.js
+│   └── partials/template
+├── dist (or build)
+├── node_modules
+├── bower_components (if using bower)
+├── test
+├── Gruntfile.js/gulpfile.js
+├── README.md
+├── package.json
+├── bower.json (if using bower)
+└── .gitignore
+```
 
 **Please Note** It is important that the file be extracted into your username directory, such that the resulting pathway looks like " /Users/your_user_name/.isochrones ". This will ensure that the isochrones package seemlessly finds the preconstructed isochrone grids. Otherwise it will start the automatic downloading from the MIST servers and begin the grid construction on its own (**That big 15GB step**). 
 
