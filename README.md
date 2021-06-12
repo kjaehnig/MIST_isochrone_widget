@@ -19,6 +19,7 @@ If you wish to avoid this interpolation step and want to jump right into creatin
     " tar -xvzf isochrones_precompiled_data.tar.gz " 
     
 The compressed directory can be downloaded from this [One-drive-link](https://vanderbilt365-my.sharepoint.com/:u:/g/personal/karl_o_jaehnig_vanderbilt_edu/EXfkpHWiINpOkwIYICHNGEgBbqq4f09SIJoPXJpKubzY7w?e=oUC7TT)
+
 **Please Note** It is important that the file be extracted into your username directory, such that the resulting pathway looks like " /Users/your_user_name/.isochrones ". This will ensure that the isochrones package seemlessly finds the preconstructed isochrone grids. Otherwise it will start the automatic downloading from the MIST servers and begin the grid construction on its own (**That big 15GB step**). 
 
 
