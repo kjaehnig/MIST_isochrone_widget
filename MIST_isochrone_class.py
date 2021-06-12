@@ -1,7 +1,12 @@
 
 
+
+
+
+
 class MIST_isochrone_class():
-    """Base class for generating isochrones
+    """Base class for generating isochrones using 
+    ISOCHRONES package
     """
     def __init__(self):
         self.num_stars = 1000
@@ -11,7 +16,11 @@ class MIST_isochrone_class():
         self.has_masses = False
         self.has_tracks = False
 
-    def generate_mass(self, N, IMF='chabrier'):
+
+    def generate_mass(self, N=self.num_stars, IMF='chabrier'):
+        """
+        Generate an initial IMF distribution of masses
+        """
         if IMF is 'chabrier':
             from isochrones.priors import ChabrierPrior as iso_IMF
             self.IMF='chabrier'
@@ -23,9 +32,12 @@ class MIST_isochrone_class():
         self.has_masses = True
 
 
-    def get_tracks(self):
+    def get_tracks(self, TRACKS=False, BASIC=False):
         from isochrones import get_ichrone
-        tracks = get_ichrone('mist', tracks=False, basic=False)
+        """
+        Get evolutionary tracks to generate isochrones
+        """
+        tracks = get_ichrone('mist', tracks=TRACKS, basic=BASIC)
         self.has_tracks = True
         self.tracks = tracks
 
@@ -35,10 +47,13 @@ class MIST_isochrone_class():
                             av=1.0, 
                             dist=10.0, 
                             feh=0.02):
+        """
+        Generate synthetic photometry for isochrone
+        """
         if self.has_masses is False:
-            self.generate_mass
+            self.generate_mass()
         if self.has_tracks is False:
-            self.get_tracks
+            self.get_tracks()
 
         iso_df = self.tracks.generate(self.masses,
                                     age,
