@@ -28,7 +28,7 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
         iso_cls.generate_mass(2000)
         iso_cls.get_tracks()
 
-    best_iso_params = pd.read_csv(RepoDIR+'cluster_best_iso_params.csv')
+    best_iso_params = pd.read_csv(RepoDIR+'sample_clusters/cluster_best_iso_params.csv')
 
 
 
