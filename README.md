@@ -45,6 +45,8 @@ This can be done by changing the following line in run_isochrone_widget.py (line
 To the directory into which you download this REPO.
 
 
+
+### Running the widget
 The widget can be called from a terminal by typing: 
         " python run_isochrone_widget.py "
         
