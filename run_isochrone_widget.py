@@ -13,13 +13,13 @@ rcParams['axes.labelweight'] = 'bold'
 rcParams['axes.titleweight'] = 'bold'
 
 
-
+RepoDIR = "YOUR_REPOSITORY_DIRECTORY/MIST-isochrone-widget/"
 
 
 def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
     if clst_data is None:
-        clst_data = pd.read_csv("berkeley_39_gaia_dr2_data.csv")
+        clst_data = pd.read_csv(RepoDIR+"sample_clusters/berkeley_39_gaia_dr2_data.csv")
 
 
     # usually iso_cls will be None unless running this function in ipython.
@@ -28,7 +28,7 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
         iso_cls.generate_mass(2000)
         iso_cls.get_tracks()
 
-    best_iso_params = pd.read_csv('cluster_best_iso_params.csv')
+    best_iso_params = pd.read_csv(RepoDIR+'cluster_best_iso_params.csv')
 
 
 
@@ -81,7 +81,7 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
         ax=ax_age,
         label=r'$Age$',
         valmin=5.1,
-        valmax=10.1,
+        valmax=12.5,
         valinit=7,
         orientation='vertical')
     av_slider = Slider(
@@ -111,7 +111,7 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
     # set up button to load Berkeley-39
     def load_b39(event):
-        data = pd.read_csv("berkeley_39_gaia_dr2_data.csv")
+        data = pd.read_csv(RepoDIR+"sample_clusters/berkeley_39_gaia_dr2_data.csv")
         iso_cls.current_gmag = data.phot_g_mean_mag.values
         iso_cls.current_bprp = data.bp_rp.values
         
@@ -133,7 +133,7 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
     # set up button to load Melotte-22
     def load_m22(event):
-        data = pd.read_csv("melotte_22_gaia_dr2_data.csv")
+        data = pd.read_csv(RepoDIR+"sample_clusters/melotte_22_gaia_dr2_data.csv")
         iso_cls.current_gmag = data.phot_g_mean_mag.values
         iso_cls.current_bprp = data.bp_rp.values
         
@@ -155,7 +155,7 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
     # set up button to load Melotte-20
     def load_m20(event):
-        data = pd.read_csv("melotte_20_gaia_dr2_data.csv")
+        data = pd.read_csv(RepoDIR+"sample_clusters/melotte_20_gaia_dr2_data.csv")
         iso_cls.current_gmag = data.phot_g_mean_mag.values
         iso_cls.current_bprp = data.bp_rp.values
         
@@ -177,7 +177,7 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
     # set up button to load NGC-2632
     def load_n2632(event):
-        data = pd.read_csv("ngc_2632_gaia_dr2_data.csv")
+        data = pd.read_csv(RepoDIR+"sample_clusters/ngc_2632_gaia_dr2_data.csv")
         iso_cls.current_gmag = data.phot_g_mean_mag.values
         iso_cls.current_bprp = data.bp_rp.values
         
@@ -199,7 +199,7 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
     # set up button to load IC-4651
     def load_ic4651(event):
-        data = pd.read_csv("ic4651_gaia_dr2_data.csv")
+        data = pd.read_csv(RepoDIR+"sample_clusters/ic4651_gaia_dr2_data.csv")
         iso_cls.current_gmag = data.phot_g_mean_mag.values
         iso_cls.current_bprp = data.bp_rp.values
         
@@ -221,7 +221,7 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
     # set up button to load IC-4756
     def load_ic4756(event):
-        data = pd.read_csv("ic4756_gaia_dr2_data.csv")
+        data = pd.read_csv(RepoDIR+"sample_clusters/ic4756_gaia_dr2_data.csv")
         iso_cls.current_gmag = data.phot_g_mean_mag.values
         iso_cls.current_bprp = data.bp_rp.values
         

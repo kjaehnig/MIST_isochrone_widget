@@ -17,9 +17,9 @@ class MIST_isochrone_class():
         self.has_tracks = False
 
         self.iso_bounds = {
-            'age': [5.1, 12.5],
-            'av' : [0.0, 6.0],
-            'dist' : [1.0, 30000],
+            'age': [5.1, 12.5], 
+            'av' : [0.0, 6.0], ## Hard Limit, will not crash
+            'dist' : [1.0, 30000],  ## Don't go below 1.0parsecs
             'feh' : [-4, 0.49] ## going out of feh lims will crash python
         }
 
