@@ -18,7 +18,7 @@ Once these files are generated, you should be able generate isochrones on the re
 If you wish to avoid this interpolation step and want to jump right into creating isochrones, I am providing a link to a precompile directory of all necessary evolutionary tracks and their bolometric corrections to generate isochrones in Gaia DR2 [G, BP, RP] passbands. The files contains UBVRI passbands as well as WISE passbands. The directory is tar zipped and can be extracted with
     " tar -xvzf isochrones_precompiled_data.tar.gz " 
     
-The compressed directory can be downloaded from this [One-drive-link] (https://vanderbilt365-my.sharepoint.com/:u:/g/personal/karl_o_jaehnig_vanderbilt_edu/EXfkpHWiINpOkwIYICHNGEgBbqq4f09SIJoPXJpKubzY7w?e=oUC7TT)
+The compressed directory can be downloaded from this [One-drive-link](https://vanderbilt365-my.sharepoint.com/:u:/g/personal/karl_o_jaehnig_vanderbilt_edu/EXfkpHWiINpOkwIYICHNGEgBbqq4f09SIJoPXJpKubzY7w?e=oUC7TT)
 **Please Note** It is important that the file be extracted into your username directory, such that the resulting pathway looks like " /Users/your_user_name/.isochrones ". This will ensure that the isochrones package seemlessly finds the preconstructed isochrone grids. Otherwise it will start the automatic downloading from the MIST servers and begin the grid construction on its own (**That big 15GB step**). 
 
 
