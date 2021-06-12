@@ -16,11 +16,19 @@ class MIST_isochrone_class():
         self.has_masses = False
         self.has_tracks = False
 
+        self.iso_bounds = {
+            'age': [5.1, 12.5],
+            'av' : [0.0, 6.0],
+            'dist' : [1.0, 30000],
+            'feh' : [-4, 0.49] ## going out of feh lims will crash python
+        }
 
-    def generate_mass(self, N=self.num_stars, IMF='chabrier'):
+    def generate_mass(self, N=None, IMF='chabrier'):
         """
         Generate an initial IMF distribution of masses
         """
+        if N is None :
+            N=self.num_stars
         if IMF is 'chabrier':
             from isochrones.priors import ChabrierPrior as iso_IMF
             self.IMF='chabrier'
@@ -46,7 +54,7 @@ class MIST_isochrone_class():
                             age=7.0, 
                             av=1.0, 
                             dist=10.0, 
-                            feh=0.02):
+                            feh=0.00):
         """
         Generate synthetic photometry for isochrone
         """
@@ -55,6 +63,9 @@ class MIST_isochrone_class():
         if self.has_tracks is False:
             self.get_tracks()
 
+        if feh < -4 or feh > 0.49:
+            raise Exception("GOING OUTSIDE OF FeH LIMITS WILL CRASH PYTHON")
+            return
         iso_df = self.tracks.generate(self.masses,
                                     age,
                                     feh,
