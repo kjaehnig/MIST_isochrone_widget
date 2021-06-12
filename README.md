@@ -21,30 +21,37 @@ If you wish to avoid this interpolation step and want to jump right into creatin
 The compressed directory can be downloaded from this [One-drive-link](https://tinyurl.com/mby99638)
 The .isochrones directory will look like this once unzipped:
 ```bash
-├── app
-│   ├── css
-│   │   ├── **/*.css
-│   ├── favicon.ico
-│   ├── images
-│   ├── index.html
-│   ├── js
-│   │   ├── **/*.js
-│   └── partials/template
-├── dist (or build)
-├── node_modules
-├── bower_components (if using bower)
-├── test
-├── Gruntfile.js/gulpfile.js
-├── README.md
-├── package.json
-├── bower.json (if using bower)
-└── .gitignore
+|── .isochrones
+   ├── BC
+   |   ├──mist
+   |        ├── UBVRIplus and WISE passband files
+   ├── mist
+       ├──tracks
+           ├──array_grid_v1.2_vvcrit0.4.npz
+           ├──full_grid_v1.2_vvcrit0.4.npz
+           ├──dt_deep_v1.2_vvcrit0.4.h5
+           ├──mist_v1.2_vvcrit0.4.h5
 ```
 
 **Please Note** It is important that the file be extracted into your username directory, such that the resulting pathway looks like " /Users/your_user_name/.isochrones ". This will ensure that the isochrones package seemlessly finds the preconstructed isochrone grids. Otherwise it will start the automatic downloading from the MIST servers and begin the grid construction on its own (**That big 15GB step**). 
 
 
-After importing the MIST_isochrone_class object and initializing masses, and tracks, the first generation of an isochrone will take a few seconds. After which the generation of isochrones via the figure sliders should proceed quickly.
+## Using the isochrone widget for the first time
 
+The widget can be called from a terminal by doing: 
+        " python run_isochrone_widget.py "
+        
+After which the following should appear in your terminal:
+```bash
+Holoviews not imported. Some visualizations will not be available.
+PyMultiNest not imported.  MultiNest fits will not work.
+Initializing isochrone class object (takes a second...)
+Initialization done
+```
+Once that is completed the matplotlib figure should appear and you're ready to explore with the sliders and the pre-loaded cluster buttons.
+
+**Unfortunately**, sometimes the matplotlib figure will 'freeze' when being called within the ipython terminal. I have not found that to be the case when calling the function with python, so that's the more reliable way to use this widget if using it to teach in a lecture or lab.
+        
+        
 
 
