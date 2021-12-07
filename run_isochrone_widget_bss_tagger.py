@@ -75,6 +75,12 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
                     ,lw=2,ls='--',color='black',
                 rasterized=True)
 
+    ## single point for the TAMS of the isochrone
+
+    tams, = cmd.plot(-50,-50,ls='None',marker='o',rasterized=True, color='blue')
+    bss_vline, = cmd.plot([-50,-50],[-50,-40], color='blue', ls='--', rasterized=True)
+    bss_hline, = cmd.plot([-50,-40],[-50,-50], color='blue', ls='--', rasterized=True)
+
 
     axcolor='lightgoldenrodyellow'
 
@@ -272,6 +278,8 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
         dist_slider.reset()
         feh_slider.reset()
 
+        update_tams_location(new_iso_vals)
+
         fig.canvas.draw_idle()
 
     load_best_iso_ax = fig.add_subplot(ax_grid[19:20,85:100])
@@ -279,6 +287,23 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
                     color='springgreen', hovercolor='palegreen')
     load_best_iso_button.label.set_fontsize(8)
     load_best_iso_button.on_clicked(load_best_iso)
+
+
+    def update_tams_location(isophot):
+
+        isophot = isophot.loc[isophot['eep'] <= 454]
+        isophot = isophot.iloc[np.argmin(isophot['BP_RP'])]
+
+        tams.set_xdata(isophot['BP_RP'])
+        tams.set_ydata(isophot['G_mag'])
+
+        bss_vline.set_xdata([isophot['BP_RP'], isophot['BP_RP']])
+        bss_vline.set_ydata([isophot['G_mag'], isophot['G_mag']-10])
+
+        bss_hline.set_xdata([isophot['BP_RP'], isophot['BP_RP']-10])
+        bss_hline.set_ydata([isophot['G_mag'], isophot['G_mag']])
+
+        fig.canvas.draw_idle()
 
 
     # set up to generate new isochrones with sliders
@@ -290,6 +315,8 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
         new_iso_vals = new_iso_vals.sort_values("eep")
         line.set_xdata(new_iso_vals.BP_RP)
         line.set_ydata(new_iso_vals.G_mag)
+
+        update_tams_location(new_iso_vals)
         fig.canvas.draw_idle()
 
 

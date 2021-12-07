@@ -17,6 +17,99 @@ rcParams['axes.titleweight'] = 'bold'
 RepoDIR = "~/Repositories/MIST_isochrone_widget/"
 
 
+def gaia_passbands_ext_calc(g, bprp, EBV, AV=None):
+    """ Takes Gaia DR2 G, BP, RP apparent magnitude measurements and
+    calculates the passband specific extinction using either a provided
+    E(B-V) reddening value or an AV extinction value. Polynomial fit
+    coefficients are from Babusieaux et. al. 2018
+    
+    Parameters
+    ----------
+        g : array, N
+            Gaia DR2 G-band apparent magnitude measurements
+        bp : array, N
+            Gaia DR2 BP-band apparent magnitude measurements
+        rp : array, N
+            Gaia DR2 RP-band apparent magnitude measurements
+        EBV : float
+            Reddening value in the B-V Johnson-cousins passbands
+        AV : float
+            Johnson-cousins V-band extinction value (default=None)
+    Returns
+    -------
+        A_G : array, N
+            Gaia DR2 G-band extinction values
+        A_BP : array, N
+            Gaia DR2 BP-band extinction values
+        A_RP : array, N
+            Gaia DR2 RP-band extinction values
+    """
+    # k_x = A_x / A_0
+    # A_0 = 3.1 * EBV
+
+    kG = {'c1':0.9761, 'c2':-0.1704, 'c3':0.0086, 
+            'c4':0.0011, 'c5':-0.0438, 'c6':0.0013, 'c7':0.0099}
+
+    kBP = {'c1':1.1517, 'c2':-0.0871, 'c3':-0.0333, 
+            'c4':0.0173, 'c5':-0.0230, 'c6':0.0006, 'c7':0.0043}
+
+    kRP = {'c1':0.6104, 'c2':-0.0170, 'c3':-0.0026, 
+            'c4':-0.0017, 'c5':-0.0078, 'c6':0.00005, 'c7':0.0006}
+
+    if AV is None:
+        A0 = 3.1 * EBV
+    else:
+        A0 = AV
+    kGequ = kG['c1'] + kG['c2']*(bprp) + kG['c3']*(bprp)**2. \
+            + kG['c4']*(bprp)**3. + kG['c5']*A0 + kG['c6']*A0**2. \
+            + kG['c7']*(bprp)*A0
+    A_G = kGequ * A0
+
+
+    kBPequ = kBP['c1'] + kBP['c2']*(bprp) + kBP['c3']*(bprp)**2. \
+            + kBP['c4']*(bprp)**3. + kBP['c5']*A0 + kBP['c6']*A0**2. \
+            + kBP['c7']*(bprp)*A0
+    A_BP = kBPequ * A0
+
+
+    kRPequ = kRP['c1'] + kRP['c2']*(bprp) + kRP['c3']*(bprp)**2. \
+            + kRP['c4']*(bprp)**3. + kRP['c5']*A0 + kRP['c6']*A0**2. \
+            + kRP['c7']*(bprp)*A0
+    A_RP = kRPequ * A0
+
+    return (A_G, A_BP, A_RP)
+
+
+def get_absolute_mags(clst_data, Av=None, DIST=None):
+
+    mg,bprp,plx = clst_data
+
+    if DIST is None:
+        ini_dist = 1000. / np.median(plx[np.isfinite(plx)])
+    else:
+        ini_dist = DIST
+
+    if Av is None:
+        ini_Av = 0.0
+    else:
+        ini_Av = Av
+
+    ag,abp,arp = gaia_passbands_ext_calc(
+        mg,
+        bprp,
+        EBV = 0.0,
+        AV=ini_Av
+        )
+
+    Mg = (mg
+        - 5.*np.log10(ini_dist) + 5
+        - ag)
+
+    BPRP = bprp - abp + arp
+
+    return (Mg,BPRP)
+
+
 def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
     if clst_data is None:
@@ -47,26 +140,34 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
     cmd = fig.add_subplot(ax_grid[0:15,45:])
 
 
+
     # Set some isochrone class values to help reload other clusters
     iso_cls.currently_loaded_cluster = clst_data.Cluster.iloc[0]
     iso_cls.current_gmag = clst_data.phot_g_mean_mag.values
     iso_cls.current_bprp = clst_data.bp_rp.values
+    iso_cls.current_plx = clst_data.parallax.values
     iso_cls.age = 7.0
-    iso_cls.av = 1.0
-    iso_cls.dist = 1.0
+    iso_cls.av = 0.0
+    iso_cls.dist = 1000./clst_data.parallax.median()
     iso_cls.feh = 0.0
 
 
     # initial scatter plot for cluster color-magnitude
-    cmd_plot, = cmd.plot(clst_data.bp_rp, clst_data.phot_g_mean_mag,
+    Mg, BPRP = get_absolute_mags(
+        (iso_cls.current_gmag,
+            iso_cls.current_bprp,
+            iso_cls.current_plx)
+                    )
+
+    cmd_plot, = cmd.plot(BPRP, Mg,
                 ls='None',marker='o', 
                 mec='red',mfc='None', rasterized=True)
-    cmd_plot.axes.set_ylim(max(clst_data.phot_g_mean_mag)+0.5,
-                            min(clst_data.phot_g_mean_mag)-0.5)
-    cmd_plot.axes.set_xlim(min(clst_data.bp_rp)-.5,
-                            max(clst_data.bp_rp)+0.5)
-    cmd.set_ylabel("g - mag")
-    cmd.set_xlabel("bp - rp")
+    cmd_plot.axes.set_ylim(max(Mg)+0.5,
+                            min(Mg)-0.5)
+    cmd_plot.axes.set_xlim(min(BPRP)-.5,
+                            max(BPRP)+0.5)
+    cmd.set_ylabel("G - mag")
+    cmd.set_xlabel("BP - RP")
     cmd.set_title(iso_cls.currently_loaded_cluster)
 
 
@@ -90,14 +191,14 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
         label=r'$A_{v}$',
         valmin=0.0,
         valmax=5.0,
-        valinit=1.0,
+        valinit=0.0,
         orientation='vertical')
     dist_slider=Slider(
         ax=ax_dist,
         label=r'$Dist(kpc)$',
         valmin=0.01,
         valmax=5,
-        valinit=1.0,
+        valinit=1./np.median(iso_cls.current_plx),
         orientation='vertical')
     feh_slider=Slider(
         ax=ax_feh,
@@ -113,15 +214,17 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
     # set up button to load Berkeley-39
     def load_b39(event):
         data = pd.read_csv(RepoDIR+"sample_clusters/berkeley_39_gaia_dr2_data.csv")
+        
+        Mg,BPRP = get_absolute_mags(data)
         iso_cls.current_gmag = data.phot_g_mean_mag.values
         iso_cls.current_bprp = data.bp_rp.values
         
-        cmd_plot.set_data(data.bp_rp, data.phot_g_mean_mag)
+        cmd_plot.set_data(BPRP, Mg)
 
-        cmd_plot.axes.set_ylim(max(data.phot_g_mean_mag)+0.5,
-                                min(data.phot_g_mean_mag)-0.5)
-        cmd_plot.axes.set_xlim(min(data.bp_rp)-.5,
-                                max(data.bp_rp)+0.5)
+        cmd_plot.axes.set_ylim(max(Mg)+0.5,
+                                min(Mg)-0.5)
+        cmd_plot.axes.set_xlim(min(BPRP)-.5,
+                                max(BPRP)+0.5)
 
         iso_cls.currently_loaded_cluster = data.Cluster.iloc[0]
         cmd.set_title(iso_cls.currently_loaded_cluster)
@@ -285,7 +388,7 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
     def generate_new_iso(val):
         new_iso_vals = iso_cls.generate_photometry(age=age_slider.val,
                                                    feh=feh_slider.val,
-                                                   dist=dist_slider.val*1000,
+                                                   dist=10,#dist_slider.val*1000,
                                                    av=av_slider.val)
         new_iso_vals = new_iso_vals.sort_values("eep")
         line.set_xdata(new_iso_vals.BP_RP)
@@ -293,10 +396,37 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
         fig.canvas.draw_idle()
 
 
+    def generate_new_iso_and_cmd(val):
+        new_iso_vals = iso_cls.generate_photometry(age=age_slider.val,
+                                                   feh=feh_slider.val,
+                                                   dist=10,#dist_slider.val*1000,
+                                                   av=av_slider.val)
+        new_iso_vals = new_iso_vals.sort_values("eep")
+        line.set_xdata(new_iso_vals.BP_RP)
+        line.set_ydata(new_iso_vals.G_mag)
+
+        Mg,BPRP = get_absolute_mags((
+            iso_cls.current_gmag,
+            iso_cls.current_bprp,
+            iso_cls.current_plx),
+            DIST=dist_slider.val * 1000.,
+            Av = av_slider.val
+            )
+
+        cmd_plot.set_data(BPRP, Mg)
+
+        cmd_plot.axes.set_ylim(max(Mg)+0.5,
+                                min(Mg)-0.5)
+        cmd_plot.axes.set_xlim(min(BPRP)-.5,
+                                max(BPRP)+0.5)
+
+        fig.canvas.draw_idle()
+
+
     age_slider.on_changed(generate_new_iso)
     feh_slider.on_changed(generate_new_iso)
-    dist_slider.on_changed(generate_new_iso)
-    av_slider.on_changed(generate_new_iso)
+    dist_slider.on_changed(generate_new_iso_and_cmd)
+    av_slider.on_changed(generate_new_iso_and_cmd)
 
 
     plt.show()

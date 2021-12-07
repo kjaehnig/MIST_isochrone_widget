@@ -14,7 +14,7 @@ rcParams['axes.labelweight'] = 'bold'
 rcParams['axes.titleweight'] = 'bold'
 
 
-RepoDIR = "~/Repositories/MIST_isochrone_widget/"
+RepoDIR = "YOUR_REPOSITORY_DIRECTORY/MIST-isochrone-widget/"
 
 
 def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
