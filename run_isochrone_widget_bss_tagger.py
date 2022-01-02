@@ -2,10 +2,9 @@ import pandas as pd
 #from GaiaOCprojectCode.isochrones_.iso_gen import MIST_isochrone_class
 from MIST_isochrone_class import MIST_isochrone_class
 from matplotlib import pyplot as plt
-from matplotlib.widgets import Slider, Button
+from matplotlib.widgets import Slider, Button, TextBox
 from matplotlib.gridspec import GridSpec
 import numpy as np
-
 
 from matplotlib import rcParams
 
@@ -19,8 +18,8 @@ RepoDIR = "~/Repositories/MIST_isochrone_widget/"
 
 def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
-    if clst_data is None:
-        clst_data = pd.read_csv(RepoDIR+"sample_clusters/berkeley_39_gaia_dr2_data.csv")
+    # if clst_data is None:
+    #     clst_data = pd.read_csv(RepoDIR+"sample_clusters/berkeley_39_gaia_dr2_data.csv")
 
 
     # usually iso_cls will be None unless running this function in ipython.
@@ -29,16 +28,13 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
         iso_cls.generate_mass(2000)
         iso_cls.get_tracks()
 
-    best_iso_params = pd.read_csv(RepoDIR+'sample_clusters/cluster_best_iso_params.csv')
-
-
 
     print("Initializing isochrone class object (takes a second...)")
     iso_data = iso_cls.generate_photometry()
     print("Initialization done")
     iso_data = iso_data.loc[iso_data.eep <= 1000].sort_values("eep")
 
-    fig = plt.figure(figsize=(8,4), constrained_layout=False)
+    fig = plt.figure(figsize=(10,6), constrained_layout=False)
     ax_grid = GridSpec(nrows=20,ncols=100)
     ax_age = fig.add_subplot(ax_grid[:,0:5])
     ax_av = fig.add_subplot(ax_grid[:,10:15])
@@ -48,23 +44,22 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
 
     # Set some isochrone class values to help reload other clusters
-    iso_cls.currently_loaded_cluster = clst_data.Cluster.iloc[0]
-    iso_cls.current_gmag = clst_data.phot_g_mean_mag.values
-    iso_cls.current_bprp = clst_data.bp_rp.values
+    iso_cls.currently_loaded_cluster = 'None'
+    iso_cls.current_gmag = [0.0]  ##clst_data.phot_g_mean_mag.values
+    iso_cls.current_bprp = [0.0]  ##clst_data.bp_rp.values
     iso_cls.age = 7.0
     iso_cls.av = 1.0
     iso_cls.dist = 1.0
     iso_cls.feh = 0.0
+    iso_cls.IS_BIG_CAT_LOADED = False
 
 
     # initial scatter plot for cluster color-magnitude
-    cmd_plot, = cmd.plot(clst_data.bp_rp, clst_data.phot_g_mean_mag,
+    cmd_plot, = cmd.plot([],[],
                 ls='None',marker='o', 
                 mec='red',mfc='None', rasterized=True)
-    cmd_plot.axes.set_ylim(max(clst_data.phot_g_mean_mag)+0.5,
-                            min(clst_data.phot_g_mean_mag)-0.5)
-    cmd_plot.axes.set_xlim(min(clst_data.bp_rp)-.5,
-                            max(clst_data.bp_rp)+0.5)
+    cmd_plot.axes.set_ylim(19,12)
+    cmd_plot.axes.set_xlim(-1,3)
     cmd.set_ylabel("g - mag")
     cmd.set_xlabel("bp - rp")
     cmd.set_title(iso_cls.currently_loaded_cluster)
@@ -77,12 +72,13 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
     ## single point for the TAMS of the isochrone
 
-    tams, = cmd.plot(-50,-50,ls='None',marker='o',rasterized=True, color='blue')
-    bss_vline, = cmd.plot([-50,-50],[-50,-40], color='blue', ls='--', rasterized=True)
-    bss_hline, = cmd.plot([-50,-40],[-50,-50], color='blue', ls='--', rasterized=True)
+    tams, = cmd.plot(-50,-50,ls='None',marker='x',rasterized=True, color='lightblue')
+    bss_vline, = cmd.plot([-50,-50],[-50,-40], color='lightblue', ls='--', rasterized=True)
+    bss_hline, = cmd.plot([-50,-40],[-50,-50], color='lightblue', ls='--', rasterized=True)
 
+    tag_bss, = cmd.plot([],[], marker='o',mec='blue',mfc='blue',lw=2,ls='None',rasterized=True)
 
-    axcolor='lightgoldenrodyellow'
+    axcolor = 'palegreen'
 
     age_slider=Slider(
         ax=ax_age,
@@ -102,7 +98,7 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
         ax=ax_dist,
         label=r'$Dist(kpc)$',
         valmin=0.01,
-        valmax=5,
+        valmax=12.6,
         valinit=1.0,
         orientation='vertical')
     feh_slider=Slider(
@@ -117,161 +113,179 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
 
     # set up button to load Berkeley-39
-    def load_b39(event):
-        data = pd.read_csv(RepoDIR+"sample_clusters/berkeley_39_gaia_dr2_data.csv")
-        iso_cls.current_gmag = data.phot_g_mean_mag.values
-        iso_cls.current_bprp = data.bp_rp.values
+    def load_big_catalog(event):
+        try:
+            print("loading CG2020 clsts/membs tables")
+            file = open("/Users/kjaehnig/Repositories/jA_A_640_A1_clst","rb")
+            clst = pd.read_pickle(file)
+            file.close()
+            file = open("/Users/kjaehnig/Repositories/jA_A_640_A1_membs","rb")
+            memb = pd.read_pickle(file)
+            file.close()
+
+            iso_cls.clst = clst
+            iso_cls.memb = memb
+            iso_cls.IS_BIG_CAT_LOADED = True
+        except:
+            print("Files not found. Downloading...J/A+A/640/A1")
+            try:
+                from astroquery.vizier import Vizier
+            except:
+                raise Exception("ASTROQUERY NOT INSTALLED!")
+
+            viz = Vizier()
+            viz.ROW_LIMITS = -1
+            viz.columns=['all']
+            res = viz.get_catalogs('J/A+A/640/A1')
+            clst = res[0].to_pandas()
+            memb = res[1].to_pandas()
+
+            iso_cls.clst = clst
+            iso_cls.memb = memb 
+            ido_cld.IS_BIG_CAT_LOADED = True
+        print('Finished loading big catalog')
+
+        # iso_cls.current_gmag = data.phot_g_mean_mag.values
+        # iso_cls.current_bprp = data.bp_rp.values
         
-        cmd_plot.set_data(data.bp_rp, data.phot_g_mean_mag)
+        # cmd_plot.set_data(data.bp_rp, data.phot_g_mean_mag)
 
-        cmd_plot.axes.set_ylim(max(data.phot_g_mean_mag)+0.5,
-                                min(data.phot_g_mean_mag)-0.5)
-        cmd_plot.axes.set_xlim(min(data.bp_rp)-.5,
-                                max(data.bp_rp)+0.5)
+        # cmd_plot.axes.set_ylim(max(data.phot_g_mean_mag)+0.5,
+        #                         min(data.phot_g_mean_mag)-0.5)
+        # cmd_plot.axes.set_xlim(min(data.bp_rp)-.5,
+        #                         max(data.bp_rp)+0.5)
 
-        iso_cls.currently_loaded_cluster = data.Cluster.iloc[0]
-        cmd.set_title(iso_cls.currently_loaded_cluster)
-        print(f'Loaded {iso_cls.currently_loaded_cluster}')
-    b39_ax = fig.add_subplot(ax_grid[18:19,40:55])
-    b39_button = Button(b39_ax,"Berkeley-39", color=axcolor, hovercolor='0.975')
-    b39_button.label.set_fontsize(8)
-    b39_button.on_clicked(load_b39)
+        # iso_cls.currently_loaded_cluster = data.Cluster.iloc[0]
+        # cmd.set_title(iso_cls.currently_loaded_cluster)
+        # print(f'Loaded {iso_cls.currently_loaded_cluster}')
+    bigcat_ax = fig.add_subplot(ax_grid[18:19,40:55])
+    bigcat_button = Button(bigcat_ax,"Load BigCat", color='pink', hovercolor='red')
+    bigcat_button.label.set_fontsize(8)
+    bigcat_button.on_clicked(load_big_catalog)
 
 
-    # set up button to load Melotte-22
-    def load_m22(event):
-        data = pd.read_csv(RepoDIR+"sample_clusters/melotte_22_gaia_dr2_data.csv")
-        iso_cls.current_gmag = data.phot_g_mean_mag.values
-        iso_cls.current_bprp = data.bp_rp.values
+
+    def load_cluster_from_searchbar(clstname):
+        if iso_cls.IS_BIG_CAT_LOADED is False:
+            cmd.set_title("BIG CATALOG IS NOT LOADED", color='red')
+        clstname = clstname.replace(' ','_').replace('-','_').upper()
+
+        if clstname in iso_cls.clst['Cluster'].str.upper().values:
+            data = iso_cls.memb.loc[iso_cls.memb['Cluster'].str.upper().values == clstname]
+            iso_cls.current_gmag = data['Gmag'].values
+            iso_cls.current_bprp = data['BP-RP'].values
+            
+            cmd_plot.set_data(iso_cls.current_bprp, iso_cls.current_gmag)
+
+            cmd_plot.axes.set_ylim(max(iso_cls.current_gmag)+0.5,
+                                    min(iso_cls.current_gmag)-0.5)
+            cmd_plot.axes.set_xlim(min(iso_cls.current_bprp)-.5,
+                                    max(iso_cls.current_bprp)+0.5)
+
+            iso_cls.currently_loaded_cluster = clstname
+            cmd.set_title(iso_cls.currently_loaded_cluster,color='black')
+            print(f'Loaded {iso_cls.currently_loaded_cluster}')
+            fig.canvas.draw_idle()
+        else:
+            cmd_plot.set_data([0.0],[0.0])
+            cmd.set_title(f'{clstname} not present!',color='red')
+            fig.canvas.draw_idle()
+    search_bar = fig.add_subplot(ax_grid[18:19,55:85])
+    search_box = TextBox(search_bar, initial='type cluster name',label=None)
+    search_box.on_submit(load_cluster_from_searchbar)
+
+
+
+    # # set up button to load NGC-2632
+    # def load_n2632(event):
+    #     data = pd.read_csv(RepoDIR+"sample_clusters/ngc_2632_gaia_dr2_data.csv")
+    #     iso_cls.current_gmag = data.phot_g_mean_mag.values
+    #     iso_cls.current_bprp = data.bp_rp.values
         
-        cmd_plot.set_data(data.bp_rp, data.phot_g_mean_mag)
+    #     cmd_plot.set_data(data.bp_rp, data.phot_g_mean_mag)
 
-        cmd_plot.axes.set_ylim(max(data.phot_g_mean_mag)+0.5,
-                                min(data.phot_g_mean_mag)-0.5)
-        cmd_plot.axes.set_xlim(min(data.bp_rp)-.5,
-                                max(data.bp_rp)+0.5)
+    #     cmd_plot.axes.set_ylim(max(data.phot_g_mean_mag)+0.5,
+    #                             min(data.phot_g_mean_mag)-0.5)
+    #     cmd_plot.axes.set_xlim(min(data.bp_rp)-.5,
+    #                             max(data.bp_rp)+0.5)
 
-        iso_cls.currently_loaded_cluster = data.Cluster.iloc[0]
-        cmd.set_title(iso_cls.currently_loaded_cluster)
-        print(f'Loaded {iso_cls.currently_loaded_cluster}')
-    m22_ax = fig.add_subplot(ax_grid[18:19,55:70])
-    m22_button = Button(m22_ax,"Pleiades", color=axcolor, hovercolor='0.975')
-    m22_button.label.set_fontsize(8)
-    m22_button.on_clicked(load_m22)
+    #     iso_cls.currently_loaded_cluster = data.Cluster.iloc[0]
+    #     cmd.set_title(iso_cls.currently_loaded_cluster)
+    #     print(f'Loaded {iso_cls.currently_loaded_cluster}')
+    # n2632_ax = fig.add_subplot(ax_grid[18:19,85:100])
+    # n2632_button = Button(n2632_ax,"Beehive", color=axcolor, hovercolor='0.975')
+    # n2632_button.label.set_fontsize(8)
+    # n2632_button.on_clicked(load_n2632)
 
 
-    # set up button to load Melotte-20
-    def load_m20(event):
-        data = pd.read_csv(RepoDIR+"sample_clusters/melotte_20_gaia_dr2_data.csv")
-        iso_cls.current_gmag = data.phot_g_mean_mag.values
-        iso_cls.current_bprp = data.bp_rp.values
+    # # set up button to load IC-4651
+    # def load_ic4651(event):
+    #     data = pd.read_csv(RepoDIR+"sample_clusters/ic4651_gaia_dr2_data.csv")
+    #     iso_cls.current_gmag = data.phot_g_mean_mag.values
+    #     iso_cls.current_bprp = data.bp_rp.values
         
-        cmd_plot.set_data(data.bp_rp, data.phot_g_mean_mag)
+    #     cmd_plot.set_data(data.bp_rp, data.phot_g_mean_mag)
 
-        cmd_plot.axes.set_ylim(max(data.phot_g_mean_mag)+0.5,
-                                min(data.phot_g_mean_mag)-0.5)
-        cmd_plot.axes.set_xlim(min(data.bp_rp)-.5,
-                                max(data.bp_rp)+0.5)
+    #     cmd_plot.axes.set_ylim(max(data.phot_g_mean_mag)+0.5,
+    #                             min(data.phot_g_mean_mag)-0.5)
+    #     cmd_plot.axes.set_xlim(min(data.bp_rp)-.5,
+    #                             max(data.bp_rp)+0.5)
 
-        iso_cls.currently_loaded_cluster = data.Cluster.iloc[0]
-        cmd.set_title(iso_cls.currently_loaded_cluster)
-        print(f'Loaded {iso_cls.currently_loaded_cluster}')
-    m20_ax = fig.add_subplot(ax_grid[18:19,70:85])
-    m20_button = Button(m20_ax,"Alpha-Per", color=axcolor, hovercolor='0.975')
-    m20_button.label.set_fontsize(8)
-    m20_button.on_clicked(load_m20)
+    #     iso_cls.currently_loaded_cluster = data.Cluster.iloc[0]
+    #     cmd.set_title(iso_cls.currently_loaded_cluster)
+    #     print(f'Loaded {iso_cls.currently_loaded_cluster}')
+    # i4651_ax = fig.add_subplot(ax_grid[19:20,55:70])
+    # i4651_button = Button(i4651_ax,"IC-4651", color=axcolor, hovercolor='0.975')
+    # i4651_button.label.set_fontsize(8)
+    # i4651_button.on_clicked(load_ic4651)
 
 
-    # set up button to load NGC-2632
-    def load_n2632(event):
-        data = pd.read_csv(RepoDIR+"sample_clusters/ngc_2632_gaia_dr2_data.csv")
-        iso_cls.current_gmag = data.phot_g_mean_mag.values
-        iso_cls.current_bprp = data.bp_rp.values
+    # # set up button to load IC-4756
+    # def load_ic4756(event):
+    #     data = pd.read_csv(RepoDIR+"sample_clusters/ic4756_gaia_dr2_data.csv")
+    #     iso_cls.current_gmag = data.phot_g_mean_mag.values
+    #     iso_cls.current_bprp = data.bp_rp.values
         
-        cmd_plot.set_data(data.bp_rp, data.phot_g_mean_mag)
+    #     cmd_plot.set_data(data.bp_rp, data.phot_g_mean_mag)
 
-        cmd_plot.axes.set_ylim(max(data.phot_g_mean_mag)+0.5,
-                                min(data.phot_g_mean_mag)-0.5)
-        cmd_plot.axes.set_xlim(min(data.bp_rp)-.5,
-                                max(data.bp_rp)+0.5)
+    #     cmd_plot.axes.set_ylim(max(data.phot_g_mean_mag)+0.5,
+    #                             min(data.phot_g_mean_mag)-0.5)
+    #     cmd_plot.axes.set_xlim(min(data.bp_rp)-.5,
+    #                             max(data.bp_rp)+0.5)
 
-        iso_cls.currently_loaded_cluster = data.Cluster.iloc[0]
-        cmd.set_title(iso_cls.currently_loaded_cluster)
-        print(f'Loaded {iso_cls.currently_loaded_cluster}')
-    n2632_ax = fig.add_subplot(ax_grid[18:19,85:100])
-    n2632_button = Button(n2632_ax,"Beehive", color=axcolor, hovercolor='0.975')
-    n2632_button.label.set_fontsize(8)
-    n2632_button.on_clicked(load_n2632)
-
-
-    # set up button to load IC-4651
-    def load_ic4651(event):
-        data = pd.read_csv(RepoDIR+"sample_clusters/ic4651_gaia_dr2_data.csv")
-        iso_cls.current_gmag = data.phot_g_mean_mag.values
-        iso_cls.current_bprp = data.bp_rp.values
-        
-        cmd_plot.set_data(data.bp_rp, data.phot_g_mean_mag)
-
-        cmd_plot.axes.set_ylim(max(data.phot_g_mean_mag)+0.5,
-                                min(data.phot_g_mean_mag)-0.5)
-        cmd_plot.axes.set_xlim(min(data.bp_rp)-.5,
-                                max(data.bp_rp)+0.5)
-
-        iso_cls.currently_loaded_cluster = data.Cluster.iloc[0]
-        cmd.set_title(iso_cls.currently_loaded_cluster)
-        print(f'Loaded {iso_cls.currently_loaded_cluster}')
-    i4651_ax = fig.add_subplot(ax_grid[19:20,55:70])
-    i4651_button = Button(i4651_ax,"IC-4651", color=axcolor, hovercolor='0.975')
-    i4651_button.label.set_fontsize(8)
-    i4651_button.on_clicked(load_ic4651)
-
-
-    # set up button to load IC-4756
-    def load_ic4756(event):
-        data = pd.read_csv(RepoDIR+"sample_clusters/ic4756_gaia_dr2_data.csv")
-        iso_cls.current_gmag = data.phot_g_mean_mag.values
-        iso_cls.current_bprp = data.bp_rp.values
-        
-        cmd_plot.set_data(data.bp_rp, data.phot_g_mean_mag)
-
-        cmd_plot.axes.set_ylim(max(data.phot_g_mean_mag)+0.5,
-                                min(data.phot_g_mean_mag)-0.5)
-        cmd_plot.axes.set_xlim(min(data.bp_rp)-.5,
-                                max(data.bp_rp)+0.5)
-
-        iso_cls.currently_loaded_cluster = data.Cluster.iloc[0]
-        cmd.set_title(iso_cls.currently_loaded_cluster)
-        print(f'Loaded {iso_cls.currently_loaded_cluster}')
-    i4756_ax = fig.add_subplot(ax_grid[19:20,70:85])
-    i4756_button = Button(i4756_ax,"IC-4756", color=axcolor, hovercolor='0.975')
-    i4756_button.label.set_fontsize(8)
-    i4756_button.on_clicked(load_ic4756)
+    #     iso_cls.currently_loaded_cluster = data.Cluster.iloc[0]
+    #     cmd.set_title(iso_cls.currently_loaded_cluster)
+    #     print(f'Loaded {iso_cls.currently_loaded_cluster}')
+    # i4756_ax = fig.add_subplot(ax_grid[19:20,70:85])
+    # i4756_button = Button(i4756_ax,"IC-4756", color=axcolor, hovercolor='0.975')
+    # i4756_button.label.set_fontsize(8)
+    # i4756_button.on_clicked(load_ic4756)
 
 
 
     # set up button to load the best isochrone for 
     # the currently loaded cluster
     def load_best_iso(event):
-        best_iso = best_iso_params.loc[
-                    best_iso_params.Cluster==iso_cls.currently_loaded_cluster]
+        best_iso = iso_cls.clst.loc[iso_cls.clst['Cluster'].str.upper() ==
+                                iso_cls.currently_loaded_cluster.upper()]
 
-        str_age = str(np.round(best_iso.age.values,2))
-        str_av = str(np.round(best_iso.av.values,2))
-        str_dist = str(np.round(best_iso.dist.values,3))
-        str_feh = str(np.round(best_iso.feh.values,3))
+        str_age = str(np.round(best_iso.AgeNN.values,2))
+        str_av = str(np.round(best_iso.AVNN.values,2))
+        str_dist = str(np.round(best_iso.DistPc.values,3))
+        str_feh = str(np.round(0.000,3))
         clst_str = 'Age: '+str_age+'\nAv: '+str_av+'\nDist[kpc]: '+str_dist+'\nFeH: '+str_feh
 
-        new_iso_vals = iso_cls.generate_photometry(age=best_iso.age,
-                                                   feh=best_iso.feh,
-                                                   dist=best_iso.dist*1000,
-                                                   av=best_iso.av).sort_values('eep')
+        new_iso_vals = iso_cls.generate_photometry(age=best_iso.AgeNN,
+                                                   feh=0.0,
+                                                   dist=best_iso.DistPc,
+                                                   av=best_iso.AVNN).sort_values('eep')
         line.set_xdata(new_iso_vals.BP_RP)
         line.set_ydata(new_iso_vals.G_mag)
         
-        age_slider.valinit = best_iso.age.squeeze()
-        av_slider.valinit = best_iso.av.squeeze()
-        dist_slider.valinit = best_iso.dist.squeeze()
-        feh_slider.valinit = best_iso.feh.squeeze()
+        age_slider.valinit = best_iso.AgeNN.squeeze()
+        av_slider.valinit = best_iso.AVNN.squeeze()
+        dist_slider.valinit = best_iso.DistPc.squeeze()/1000.
+        feh_slider.valinit = 0.0
 
         age_slider.reset()
         av_slider.reset()
@@ -282,17 +296,30 @@ def make_and_plot_isochrone_slider(clst_data=None, iso_cls=None):
 
         fig.canvas.draw_idle()
 
-    load_best_iso_ax = fig.add_subplot(ax_grid[19:20,85:100])
+    load_best_iso_ax = fig.add_subplot(ax_grid[18:19,85:100])
     load_best_iso_button = Button(load_best_iso_ax,'Get best iso', 
                     color='springgreen', hovercolor='palegreen')
     load_best_iso_button.label.set_fontsize(8)
     load_best_iso_button.on_clicked(load_best_iso)
 
 
+    def locate_and_highlight_bss(cmd_ax, isophot):
+        brighter_ = cmd_ax.get_ydata() < isophot.G_mag.min()
+        bluer_ = cmd_ax.get_xdata() < isophot.BP_RP.min()
+
+        bss_bprp = cmd_ax.get_xdata()[brighter_ & bluer_]
+        bss_gmag = cmd_ax.get_ydata()[brighter_ & bluer_]
+
+        tag_bss.set_xdata(bss_bprp)
+        tag_bss.set_ydata(bss_gmag)
+
+
     def update_tams_location(isophot):
 
-        isophot = isophot.loc[isophot['eep'] <= 454]
+        isophot = isophot.loc[isophot['eep'] <= 605]
         isophot = isophot.iloc[np.argmin(isophot['BP_RP'])]
+
+        locate_and_highlight_bss(cmd_plot, isophot)
 
         tams.set_xdata(isophot['BP_RP'])
         tams.set_ydata(isophot['G_mag'])
